@@ -65,9 +65,9 @@ func (cli ConnectionClient) Search(title string, limits int){
         cli.req = gorequest.New()
     }
 
-    resp, body, err := cli.req.Get(dbQueryURL+"?"+cond).EndStruct(&res)
-    log.Println(resp.Status)
-    log.Println("body:"+string(body))
+    _, _, err := cli.req.Get(dbQueryURL+"?"+cond).EndStruct(&res)
+    //log.Println(resp.Status)
+    //log.Println("body:"+string(body))
     if err != nil{
         log.Println(err)
     }else{
@@ -78,13 +78,14 @@ func (cli ConnectionClient) Search(title string, limits int){
 
 func (cli ConnectionClient) searchMovies(movies Movies,limits int) {
     log.Println("Searching imgs...")
+    cli.CheckPath()
     if limits == 0 {
         for _, m := range movies {
             _, imageBytes, errs := cli.req.Get(m.Images.Large).EndBytes()
             if errs != nil {
                 log.Println(errs)
             } else {
-                log.Println("Write images..."+m.Title)
+                //log.Println("Write images..."+m.Title)
                 image, e := os.Create(m.Title + "-" + m.Year + ".jpg")
                 if e != nil {
                     log.Println(e)
@@ -96,13 +97,13 @@ func (cli ConnectionClient) searchMovies(movies Movies,limits int) {
         return
     }
     for index, m := range movies {
-        log.Println(m)
-        if index+1 <= limits {
+        //log.Println(m)
+        if index + 1 <= limits {
             _, imageBytes, errs := cli.req.Get(m.Images.Large).EndBytes()
             if errs != nil {
                 log.Println(errs)
             } else {
-                image, e := os.Create(m.Title + "-" + m.Year + ".jpg")
+                image, e := os.Create( cli.path+"/"+m.Year + m.Title + ".jpg")
                 if e != nil {
                     log.Println(e)
                 } else {
@@ -112,5 +113,17 @@ func (cli ConnectionClient) searchMovies(movies Movies,limits int) {
         } else {
             return
         }
+    }
+}
+
+func (cli ConnectionClient) CheckPath() bool {
+    _, err := os.Stat(cli.path)
+    if err == nil{
+        return true
+    }else if os.IsNotExist(err){
+        os.Mkdir(cli.path,os.ModePerm)
+        return true
+    }else{
+        return false
     }
 }
